@@ -501,9 +501,11 @@ fu! s:SetupMappings() "{{{
     "for the terminal
     nnoremap <buffer> <silent> i :call <SID>OpenGitvCommit("Gedit", 1)<cr>
 
+    nnoremap <buffer> <silent> <Plug>(gitv-update) :call <SID>LoadGitv('', 1, b:Gitv_CommitCount, b:Gitv_ExtraArgs, gitv#util#file#relativepath(), gitv#util#file#range())<cr>
+    nmap     <buffer> <silent> u <Plug>(gitv-update)
+
     nnoremap <buffer> <silent> q :call <SID>CloseGitv()<cr>
-    nnoremap <buffer> <silent> u :call <SID>LoadGitv('', 1, b:Gitv_CommitCount, b:Gitv_ExtraArgs, <SID>GetRelativeFilePath(), <SID>GetRange())<cr>
-    nnoremap <buffer> <silent> a :call <SID>LoadGitv('', 0, b:Gitv_CommitCount, <SID>ToggleArg(b:Gitv_ExtraArgs, '--all'), <SID>GetRelativeFilePath(), <SID>GetRange())<cr>
+    nnoremap <buffer> <silent> a :call <SID>LoadGitv('', 0, b:Gitv_CommitCount, <SID>ToggleArg(b:Gitv_ExtraArgs, '--all'), gitv#util#file#relativepath(), gitv#util#file#range())<cr>
     nnoremap <buffer> <silent> co :call <SID>CheckOutGitvCommit()<cr>
 
     nnoremap <buffer> <silent> D :call <SID>DiffGitvCommit()<cr>
@@ -776,12 +778,6 @@ fu! s:ResizeHorizontal() "{{{
     endif
     exec "resize " . lines
 endf "}}}
-fu! s:GetRelativeFilePath() "{{{
-    return exists('b:Gitv_FileModeRelPath') ? b:Gitv_FileModeRelPath : ''
-endf "}}}
-fu! s:GetRange() "{{{
-    return exists('b:Gitv_FileModeRange') ? b:Gitv_FileModeRange : []
-endfu "}}}
 fu! s:SetRange(idx, value) "{{{
     "idx - {0,1}, 0 for beginning, 1 for end.
     let b:Gitv_FileModeRange[a:idx] = a:value
@@ -795,14 +791,14 @@ fu! s:FoldToRevealOnlyRange(rangeStart, rangeEnd) "{{{
     exec rangeE.'+1,$fold'
 endfu "}}}
 fu! s:OpenRelativeFilePath(sha, geditForm) "{{{
-    let relPath = s:GetRelativeFilePath()
+    let relPath = gitv#util#file#relativepath()
     if relPath == ''
         return
     endif
     let cmd = a:geditForm . " " . a:sha . ":" . relPath
     let cmd = 'call s:RecordBufferExecAndWipe("'.cmd.'", '.(a:geditForm=='Gedit').')'
     call s:MoveIntoPreviewAndExecute(cmd, 1)
-    let range = s:GetRange()
+    let range = gitv#util#file#range()
     if range != []
         let rangeS = escape(range[0], '"')
         let rangeE = escape(range[1], '"')
@@ -813,7 +809,7 @@ endf "}}} }}}
 "Operations: "{{{
 fu! s:OpenGitvCommit(geditForm, forceOpenFugitive) "{{{
     if getline('.') == "-- Load More --"
-        call s:LoadGitv('', 1, b:Gitv_CommitCount+g:Gitv_CommitStep, b:Gitv_ExtraArgs, s:GetRelativeFilePath(), s:GetRange())
+        call s:LoadGitv('', 1, b:Gitv_CommitCount+g:Gitv_CommitStep, b:Gitv_ExtraArgs, gitv#util#file#relativepath(), gitv#util#file#range())
         return
     endif
     if s:IsFileMode() && getline('.') =~ "^-- \\[.*\\] --$"
@@ -848,7 +844,7 @@ fu! s:OpenGitvCommit(geditForm, forceOpenFugitive) "{{{
     endif
 endf
 fu! s:OpenWorkingCopy(geditForm)
-    let fp = s:GetRelativeFilePath()
+    let fp = gitv#util#file#relativepath()
     let form = a:geditForm[1:] "strip off the leading 'G'
     let cmd = form . " " . fugitive#buffer().repo().tree() . "/" . fp
     let cmd = 'call s:RecordBufferExecAndWipe("'.cmd.'", '.(form=='edit').')'
@@ -857,7 +853,7 @@ endfu
 fu! s:OpenWorkingDiff(geditForm, staged)
     let winCmd = a:geditForm[1:] == 'edit' ? '' : a:geditForm[1:]
     if s:IsFileMode()
-        let fp = s:GetRelativeFilePath()
+        let fp = gitv#util#file#relativepath()
         let suffix = ' -- '.fp
         let g:Gitv_InstanceCounter += 1
         let winCmd = 'new gitv'.'-'.g:Gitv_InstanceCounter
@@ -873,7 +869,7 @@ fu! s:OpenWorkingDiff(geditForm, staged)
     call s:MoveIntoPreviewAndExecute(cmd, 1)
 endfu
 fu! s:EditRange(rangeDelimiter)
-    let range = s:GetRange()
+    let range = gitv#util#file#range()
     let rangeDelimWithSlashes = '/'.a:rangeDelimiter.'/'
     let idx = rangeDelimWithSlashes == range[0] ? 0 : rangeDelimWithSlashes == range[1] ? 1 : -1
     if idx == -1
@@ -906,7 +902,7 @@ fu! s:CheckOutGitvCommit() "{{{
     let choice = substitute(choice, "^t:", "", "")
     let choice = substitute(choice, "^r:", "", "")
     if s:IsFileMode()
-        let relPath = s:GetRelativeFilePath()
+        let relPath = gitv#util#file#relativepath()
         let choice .= " -- " . relPath
     endif
     exec "Git checkout " . choice
@@ -1078,7 +1074,7 @@ fu! s:JumpToParent() "{{{
         return
     endif
     while !search( '^\ze.*\['.parent.'\]$', 'Ws' )
-        call s:LoadGitv('', 1, b:Gitv_CommitCount+g:Gitv_CommitStep, b:Gitv_ExtraArgs, s:GetRelativeFilePath(), s:GetRange())
+        call s:LoadGitv('', 1, b:Gitv_CommitCount+g:Gitv_CommitStep, b:Gitv_ExtraArgs, gitv#util#file#relativepath(), gitv#util#file#range())
     endwhile
     redraw
 endf "}}}
