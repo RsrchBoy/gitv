@@ -20,6 +20,7 @@ set cpo&vim
 "g:Gitv_TruncateCommitSubjects    - {0,1}
 "g:Gitv_OpenPreviewOnLaunch       - {0,1}
 "g:Gitv_PromptToDeleteMergeBranch - {0,1}
+"g:Gitv_TellMeAboutIt             - {0,1}
 
 if !exists("g:Gitv_CommitStep")
     let g:Gitv_CommitStep = &lines
@@ -43,6 +44,10 @@ endif
 
 if !exists('g:Gitv_PromptToDeleteMergeBranch')
     let g:Gitv_PromptToDeleteMergeBranch = 0
+endif
+
+if !exists('g:Gitv_TellMeAboutIt')
+    let g:Gitv_TellMeAboutIt = 1 " legacy
 endif
 
 "this counts up each time gitv is opened to ensure a unique file name
@@ -257,7 +262,9 @@ fu! s:LoadGitv(direction, reload, commitCount, extraArgs, filePath, range) "{{{
     call s:SetupMappings() "redefines some of the mappings made by Gitv_OpenGitCommand
     call s:ResizeWindow(a:filePath!='')
 
-    echom "Loaded up to " . a:commitCount . " commits."
+    if g:Gitv_TellMeAboutIt
+        echom "Loaded up to " . a:commitCount . " commits."
+    endif
     return 1
 endf "}}}
 fu! s:ToggleArg(args, toggle) "{{{
