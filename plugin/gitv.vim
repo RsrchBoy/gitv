@@ -56,7 +56,7 @@ let g:Gitv_InstanceCounter = 0
 let s:localUncommitedMsg = 'Local uncommitted changes, not checked in to index.'
 let s:localCommitedMsg   = 'Local changes checked in to index but not committed.'
 
-command! -nargs=* -range -bang -complete=custom,s:CompleteGitv Gitv call s:OpenGitv(shellescape(<q-args>), <bang>0, <line1>, <line2>)
+command! -nargs=* -range -bang -complete=custom,gitv#util#completion Gitv call s:OpenGitv(shellescape(<q-args>), <bang>0, <line1>, <line2>)
 cabbrev gitv <c-r>=(getcmdtype()==':' && getcmdpos()==1 ? 'Gitv' : 'gitv')<CR>
 
 "Public API:"{{{
@@ -189,29 +189,6 @@ fu! s:IsCompatible() "{{{
     endif
     return exists('g:loaded_fugitive')
 endfu "}}}
-fu! s:CompleteGitv(arglead, cmdline, pos) "{{{
-    if match( a:arglead, '^-' ) >= 0
-        return  "\n--after\n--all-match\n--ancestry-path\n--author-date-order"
-                \ . "\n--author=\n--author=\n--before=\n--bisect\n--boundary"
-                \ . "\n--branches\n--cherry-mark\n--cherry-pick\n--committer="
-                \ . "\n--date-order\n--dense\n--exclude=\n--first-parent"
-                \ . "\n--fixed-strings\n--follow\n--glob\n--grep-reflog"
-                \ . "\n--grep=\n--max-age=\n--max-count=\n--merges\n--min-age="
-                \ . "\n--min-parents=\n--not\n--pickaxe-all\n--pickaxe-regex"
-                \ . "\n--regexp-ignore-case\n--remotes\n--remove-empty\n--since="
-                \ . "\n--skip\n--tags\n--topo-order\n--until=\n--use-mailmap"
-    else
-        let refs = fugitive#buffer().repo().git_chomp('rev-parse', '--symbolic', '--branches', '--tags', '--remotes')
-        let refs .= "\nHEAD\nFETCH_HEAD\nORIG_HEAD"
-
-        " Complete ref names preceded by a ^ or anything followed by 2-3 dots
-        let prefix = matchstr( a:arglead, '\v^(\^|.*\.\.\.?)' )
-        if prefix == ''
-            return refs
-        else
-            return substitute( refs, "\\v(^|\n)\\zs", prefix, 'g' )
-        endif
-endf "}}}
 fu! s:OpenBrowserMode(extraArgs) "{{{
     "this throws an exception if not a git repo which is caught immediately
     let fubuffer = fugitive#buffer()
